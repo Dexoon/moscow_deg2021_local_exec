@@ -34,7 +34,7 @@ do
   echo "new node with ports: $public_port (public) and $private_port (private)"
   sleep 1
 done
-
+sleep 10;
 echo "Changing config public_api_keys"
 python3 -m exonum_launcher -i /launch_config.yaml
 

@@ -65,7 +65,6 @@ def setup_app(app):
     def create_tables():
         db.create_all()
         create_db_elements()
-
     db.init_app(app)
     config_oauth(app)
     app.register_blueprint(bp, url_prefix='')

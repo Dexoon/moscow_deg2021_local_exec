@@ -1,4 +1,5 @@
 import time
+import json
 from flask import Blueprint, request, session, url_for
 from flask import render_template, redirect, jsonify
 from werkzeug.security import gen_salt
@@ -6,7 +7,6 @@ from authlib.integrations.flask_oauth2 import current_token
 from authlib.oauth2 import OAuth2Error
 from .models import db, User, OAuth2Client
 from .oauth2 import authorization, require_oauth
-
 
 bp = Blueprint('home', __name__)
 
@@ -34,7 +34,8 @@ def home():
             mail = request.form.get('mail')
             mobile = request.form.get('mobile')
 
-            user = User(username=username, first_name=first_name, last_name=last_name, middle_name=middle_name, mail=mail, mobile=mobile)
+            user = User(username=username, first_name=first_name, last_name=last_name, middle_name=middle_name,
+                        mail=mail, mobile=mobile)
             db.session.add(user)
             db.session.commit()
         session['id'] = user.id
@@ -59,7 +60,7 @@ def logout():
 
 
 @bp.route('/create_client', methods=('GET', 'POST'))
-def create_client():
+def create_client(user=None):
     user = current_user()
     if not user:
         return redirect('/')
@@ -94,6 +95,27 @@ def create_client():
     db.session.add(client)
     db.session.commit()
     return redirect('/')
+
+
+@bp.route('/oauth/tg_endpoint', methods=['POST'])
+def tg_endpoint():
+    id = request.form.get('id')
+    user = User.query.filter_by(id=id).first()
+    if not user:
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        username = id
+        middle_name = 'Отчество'
+        mail = f"{id}@telegram.org"
+        mobile = '7' + f"{id}".zfill(10)
+        user = User(username=username, first_name=first_name, last_name=last_name, middle_name=middle_name,
+                    mail=mail, mobile=mobile, id=id)
+        db.session.add(user)
+        db.session.commit()
+    create_client(user)
+    x = authorization.create_authorization_response(grant_user=user)
+    print(x.__dict__)
+    return str(1)
 
 
 @bp.route('/oauth/authorize', methods=['GET', 'POST'])
@@ -133,7 +155,7 @@ def revoke_token():
 def api_me():
     user = current_token.user
     return dict(
-        guid=user.id, 
+        guid=user.id,
         FirstName=user.first_name,
         LastName=user.last_name,
         MiddleName=user.middle_name,
