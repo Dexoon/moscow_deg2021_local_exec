@@ -182,22 +182,30 @@ def create_client(user=None):
     return redirect('/')
 
 
-def canonize_dict(d: Dict, keys: List[str]) -> str:
-    return json.dumps([d.get(key) for key in keys])
+# def canonize_dict(d: Dict, keys: List[str]) -> str:
+#     return json.dumps([d.get(key) for key in keys])
 
 
-def validate_bot(data: Dict, keys: List[str]) -> None:
-    key = os.environ.get("TELEGRAM_BOT_SECRET").encode()
-    canonized = canonize_dict(data, keys)
-    h = hmac.new(key, canonized.encode(), hashlib.sha256)
-    logger.debug(f"Canonized: {canonized.encode()}, digest: {h.hexdigest()}")
-    if not secrets.compare_digest(data["auth_hmac"], h.hexdigest()):
+# def validate_bot(data: Dict, keys: List[str]) -> None:
+#     key = os.environ.get("TELEGRAM_BOT_SECRET").encode()
+#     canonized = canonize_dict(data, keys)
+#     h = hmac.new(key, canonized.encode(), hashlib.sha256)
+#     logger.debug(f"Canonized: {canonized.encode()}, digest: {h.hexdigest()}")
+#     if not secrets.compare_digest(data["auth_hmac"], h.hexdigest()):
+#         abort(401)
+
+def validate_bot(token: str) -> None:
+    correct_token = os.environ.get("TELEGRAM_BOT_SECRET")
+    if not isinstance(token, str):
+        abort(400, "Token must be string")
+    if not secrets.compare_digest(token, correct_token):
         abort(401)
 
 
 @bp.route('/oauth/tg/register', methods=['POST'])
 def tg_register():
-    validate_bot(request.form, USER_KEYS)
+    # validate_bot(request.form, USER_KEYS)
+    validate_bot(request.form.get("token"))
 
     id = request.form.get('id')
     username = mobile = request.form.get('mobile')
@@ -210,13 +218,34 @@ def tg_register():
     if user:
         abort(400, "User is already registered")
 
+    logger.debug(f"Registering user id={id}, username={username}")
     user = User(username=username, first_name=first_name, last_name=last_name, middle_name=middle_name,
                 mail=mail, mobile=mobile, id=id)
-    logger.debug(f"Registering user id={id}, username={username}")
     db.session.add(user)
     db.session.commit()
 
     return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
+
+
+@bp.route('/oauth/tg/send_message', methods=['POST'])
+def tg_send_message():
+    params = request.json
+    logger.debug(f"request: {params}")
+    validate_bot(params.get("token"))
+
+    username = params.get("destination")
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        logger.warning(f"User {username} not found")
+        abort(404, f"User {username} not found")
+
+    bot = telegram.Bot(os.environ.get('TELEGRAM_BOT_TOKEN'))
+    message = params.get('message')
+    logger.debug(f"Sending message to user {user.username}: {message}")
+    bot.send_message(
+        chat_id=user.id,
+        text=message,
+    )
 
 
 @bp.route('/oauth/authorize', methods=['GET', 'POST'])

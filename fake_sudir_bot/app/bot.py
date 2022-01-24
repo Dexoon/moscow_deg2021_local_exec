@@ -86,16 +86,16 @@ def create_user(tg_user: TgUser):
     }
 
 
-def canonize_dict(d: Dict, keys: List[str]) -> str:
-    return json.dumps([d.get(key) for key in keys])
+# def canonize_dict(d: Dict, keys: List[str]) -> str:
+#     return json.dumps([d.get(key) for key in keys])
 
 
-def sign(data: Dict, keys: List[str]) -> None:
-    key = os.environ.get("TELEGRAM_BOT_SECRET").encode()
-    canonized = canonize_dict(data, keys)
-    h = hmac.new(key, canonized.encode(), hashlib.sha256)
-    logger.debug(f"Canonized: {canonized.encode()}, digest: {h.hexdigest()}")
-    data["auth_hmac"] = h.hexdigest()
+# def sign(data: Dict, keys: List[str]) -> None:
+#     key = os.environ.get("TELEGRAM_BOT_SECRET").encode()
+#     canonized = canonize_dict(data, keys)
+#     h = hmac.new(key, canonized.encode(), hashlib.sha256)
+#     logger.debug(f"Canonized: {canonized.encode()}, digest: {h.hexdigest()}")
+#     data["auth_hmac"] = h.hexdigest()
 
 
 def register(update: Update, context: CallbackContext) -> None:
@@ -103,7 +103,8 @@ def register(update: Update, context: CallbackContext) -> None:
     if tg_user is None:
         return
     user_dict = create_user(tg_user)
-    sign(user_dict, USER_KEYS)
+    user_dict["token"] = os.environ.get("TELEGRAM_BOT_SECRET")
+    # sign(user_dict, USER_KEYS)
     fake_sudir_url = "http://fake_sudir"
     rsp = requests.post(fake_sudir_url + "/oauth/tg/register", data=user_dict)
     if rsp.status_code == 200:
