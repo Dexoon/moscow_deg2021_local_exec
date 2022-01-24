@@ -293,6 +293,8 @@ services:
             SUDIR_TOKEN_URL: http://fake_sudir/oauth/token
             SUDIR_USER_DATA_URL: http://fake_sudir/api/me
 
+            TELEGRAM_BOT_TOKEN: "5169476806:AAFOE57kMgBpXAPFmjRmRz-cMnkH3HihyiA"
+
             #APP_URL:
             #APP_HTTP_PROTOCOL: http
             #APP_STATIC_URL: /common/static
