@@ -20,13 +20,15 @@ services:
             - ./storage/fake_sudir_db:/app/website/database
         environment:
             AUTHLIB_INSECURE_TRANSPORT: 1
-            TELGRAM_BOT_TOKEN: "TOKEN"
+            TELEGRAM_BOT_SECRET: "telegram_bot_secret"
+            TELEGRAM_BOT_TOKEN: "5169476806:AAFOE57kMgBpXAPFmjRmRz-cMnkH3HihyiA"
+
     fake_sudir_bot:
         build: ./fake_sudir_bot
         command: python /app/bot.py
         environment:
-            AUTHLIB_INSECURE_TRANSPORT: 1
-            TELGRAM_BOT_TOKEN: "TOKEN"
+            TELEGRAM_BOT_TOKEN: "5169476806:AAFOE57kMgBpXAPFmjRmRz-cMnkH3HihyiA"
+            TELEGRAM_BOT_SECRET: "telegram_bot_secret"
 
     rabbit_mq:
         ports:
@@ -216,7 +218,7 @@ services:
 
     deg_ballot:
         # Раскомментировать для миграций после инициализации PostgreSQL
-#        command: /bin/bash -c "php /app/artisan migrate:fresh --force"
+        # command: /bin/bash -c "php /app/artisan migrate:fresh --force"
         build:
             context: ./deg_codebase/form/ballot
             dockerfile: ${PWD}/php_env/Dockerfile
@@ -291,6 +293,6 @@ services:
             SUDIR_TOKEN_URL: http://fake_sudir/oauth/token
             SUDIR_USER_DATA_URL: http://fake_sudir/api/me
 
-            #APP_URL: 
+            #APP_URL:
             #APP_HTTP_PROTOCOL: http
             #APP_STATIC_URL: /common/static
